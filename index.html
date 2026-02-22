@@ -1013,23 +1013,28 @@
         }
 
         // --- SECTION 9: AI LOGIC (Gemini API) ---
-        const apiKey = ""; // API Key provided by environment
+        const apiKey = "AIzaSyDWx4zD30xLEVRHpbu8ho8_L53bRsYhAIQ"; // API Key provided by environment
         const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
         // Exponential Backoff Fetch
-        async function fetchWithBackoff(url, options, retries = 5) {
-            const delays = [1000, 2000, 4000, 8000, 16000];
+        async function fetchWithBackoff(url, options, retries = 3) {
+            const delays = [1000, 2000, 4000];
             for (let i = 0; i < retries; i++) {
                 try {
                     const response = await fetch(url, options);
                     if (!response.ok) {
-                        // Fail fast if authentication error or bad request prevents progress
-                        if (response.status === 400 || response.status === 403) throw new Error(`HTTP Error: ${response.status}`);
-                        throw new Error(`HTTP Error: ${response.status}`);
+                        // Retry only on 429 (Rate Limit) or 500+ (Server Errors)
+                        if (response.status === 429 || response.status >= 500) {
+                            throw new Error(`HTTP Error: ${response.status}`);
+                        }
+                        // Fail fast on 400 (Bad Request), 403 (Forbidden), 404 (Not Found)
+                        throw new Error(`Fatal: HTTP ${response.status}`);
                     }
                     return await response.json();
                 } catch (error) {
-                    if (i === retries - 1 || error.message.includes('400') || error.message.includes('403')) throw error;
+                    if (i === retries - 1 || error.message.includes('Fatal') || error.name === 'TypeError') {
+                        throw error;
+                    }
                     await new Promise(res => setTimeout(res, delays[i]));
                 }
             }
@@ -1068,8 +1073,8 @@
                 
                 updateChatMessage(typingId, formattedText);
             } catch (err) {
-                console.error(err);
-                updateChatMessage(typingId, `<span class="text-red-500">Connection error. Please try again later.</span>`);
+                console.error("Chat Error:", err);
+                updateChatMessage(typingId, `<span class="text-red-500 font-medium">API Error: Please verify you are running this within the Canvas environment, or ensure your API key is correctly configured.</span>`);
             }
         }
 
@@ -1136,15 +1141,21 @@
                 generationConfig: { 
                     responseMimeType: "application/json",
                     responseSchema: {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                front: { type: "STRING" },
-                                back: { type: "STRING" }
-                            },
-                            required: ["front", "back"]
-                        }
+                        type: "OBJECT",
+                        properties: {
+                            flashcards: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        front: { type: "STRING" },
+                                        back: { type: "STRING" }
+                                    },
+                                    required: ["front", "back"]
+                                }
+                            }
+                        },
+                        required: ["flashcards"]
                     }
                 }
             };
@@ -1156,12 +1167,13 @@
                     body: JSON.stringify(payload)
                 });
                 
-                let jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+                let jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text || '{"flashcards":[]}';
                 
                 // Strip out markdown code fences in case the model returns them despite the mimeType configuration
                 jsonText = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
 
-                currentFlashcards = JSON.parse(jsonText);
+                const parsed = JSON.parse(jsonText);
+                currentFlashcards = parsed.flashcards || [];
                 
                 if (currentFlashcards.length > 0) {
                     currentCardIndex = 0;
@@ -1176,7 +1188,7 @@
                 console.error("Flashcard Error:", err);
                 loadingState.classList.add('hidden');
                 emptyState.classList.remove('hidden');
-                emptyState.innerHTML = `<span class="text-3xl block mb-2">⚠️</span><p class="text-sm text-red-500">Failed to generate cards. Please try again.</p>`;
+                emptyState.innerHTML = `<span class="text-3xl block mb-2">⚠️</span><p class="text-sm text-red-500 font-medium">API Error: Please check your connection or ensure you are running this within the Canvas environment.</p>`;
             } finally {
                 btn.disabled = false;
                 btn.innerText = 'Generate';
