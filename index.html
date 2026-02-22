@@ -53,6 +53,14 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
+        
+        /* 3D Flip Card Styles */
+        .perspective { perspective: 1000px; }
+        .preserve-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        .flashcard-inner { transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1); }
+        .flashcard-flipped .flashcard-inner { transform: rotateY(180deg); }
     </style>
 
     <!-- Chosen Palette: Warm Neutrals with Blue Accents -->
@@ -92,6 +100,7 @@
                 <li><button onclick="navigate('pointers')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-pointers">6. Pointers & Memory</button></li>
                 <li><button onclick="navigate('oop')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-oop">7. OOP & Classes</button></li>
                 <li><button onclick="navigate('ds')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-ds">8. Data Structures</button></li>
+                <li><button onclick="navigate('ai')" class="nav-item w-full text-left px-6 py-3 text-sm font-bold text-indigo-600 bg-indigo-50 border-l-4 border-indigo-600 hover:bg-indigo-100 transition-colors" id="nav-ai">✨ AI Practice</button></li>
             </ul>
         </nav>
         <div class="p-4 border-t border-gray-100 bg-gray-50">
@@ -111,6 +120,7 @@
             <option value="pointers">6. Pointers</option>
             <option value="oop">7. OOP</option>
             <option value="ds">8. Data Structures</option>
+            <option value="ai">✨ AI Practice</option>
         </select>
     </div>
 
@@ -625,6 +635,102 @@
             </div>
         </section>
 
+        <!-- SECTION 9: AI PRACTICE & FLASHCARDS -->
+        <section id="ai" class="section-view hidden space-y-8 max-w-5xl mx-auto">
+            <div class="mb-6">
+                <h2 class="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">AI Tutor & Flashcards</h2>
+                <p class="text-gray-600 mt-2">Test your C++ knowledge, ask questions, and generate dynamic flashcards powered by Gemini.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- AI Tutor Chat -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[500px]">
+                    <div class="bg-indigo-600 px-4 py-3 rounded-t-xl flex justify-between items-center">
+                        <h3 class="font-bold text-white flex items-center gap-2">
+                            <span>🤖</span> C++ AI Tutor
+                        </h3>
+                        <span class="text-indigo-200 text-xs font-medium px-2 py-1 bg-indigo-700 rounded-full">Gemini 2.5 Flash</span>
+                    </div>
+                    
+                    <div id="aiChatHistory" class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                        <div class="flex gap-3">
+                            <div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold flex-shrink-0">AI</div>
+                            <div class="bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-100 text-sm text-gray-700">
+                                Hello! I'm your C++ tutor. Ask me to explain a concept, review a piece of code, or give you a practice problem!
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-white border-t border-gray-200 rounded-b-xl">
+                        <div class="flex gap-2">
+                            <input type="text" id="aiTutorInput" placeholder="Ask a C++ question..." class="flex-1 bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500" onkeypress="if(event.key === 'Enter') sendPracticeMessage()">
+                            <button onclick="sendPracticeMessage()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                                Send
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Flashcard Generator -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[500px]">
+                    <div class="bg-purple-600 px-4 py-3 rounded-t-xl">
+                        <h3 class="font-bold text-white flex items-center gap-2">
+                            <span>📇</span> AI Flashcard Generator
+                        </h3>
+                    </div>
+                    
+                    <div class="p-4 border-b border-gray-100 bg-gray-50 flex gap-2 items-center">
+                        <select id="flashcardTopic" class="flex-1 bg-white border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-purple-500">
+                            <option value="C++ Basics and Syntax">Basics & Syntax</option>
+                            <option value="C++ Pointers and Memory Management">Pointers & Memory</option>
+                            <option value="C++ Object Oriented Programming">OOP & Classes</option>
+                            <option value="C++ Data Structures (Stacks, Queues, Trees)">Data Structures</option>
+                            <option value="General C++ Interview Questions">Interview Questions</option>
+                        </select>
+                        <button onclick="generateFlashcards()" id="generateBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition-colors shadow-sm whitespace-nowrap">
+                            Generate
+                        </button>
+                    </div>
+
+                    <div class="flex-1 p-6 flex flex-col items-center justify-center bg-gray-50 relative">
+                        <div id="flashcardLoading" class="hidden text-purple-600 text-sm font-medium animate-pulse">
+                            Brainstorming flashcards...
+                        </div>
+                        
+                        <!-- The Flashcard -->
+                        <div id="flashcardScene" class="perspective w-full h-64 hidden cursor-pointer" onclick="toggleFlashcard()">
+                            <div id="flashcardInner" class="flashcard-inner w-full h-full relative preserve-3d">
+                                <!-- Front -->
+                                <div class="absolute w-full h-full backface-hidden bg-white border-2 border-purple-200 rounded-xl shadow-lg flex flex-col items-center justify-center p-6 text-center">
+                                    <span class="absolute top-3 left-4 text-xs font-bold text-purple-400 uppercase tracking-widest">Question</span>
+                                    <p id="fcFrontText" class="text-lg font-semibold text-gray-800"></p>
+                                    <span class="absolute bottom-3 text-xs text-gray-400">Click to flip</span>
+                                </div>
+                                <!-- Back -->
+                                <div class="absolute w-full h-full backface-hidden rotate-y-180 bg-purple-50 border-2 border-purple-300 rounded-xl shadow-lg flex flex-col items-center justify-center p-6 text-center">
+                                    <span class="absolute top-3 left-4 text-xs font-bold text-purple-600 uppercase tracking-widest">Answer</span>
+                                    <p id="fcBackText" class="text-base text-gray-800 overflow-y-auto max-h-[80%]"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="flashcardEmpty" class="text-center text-gray-400">
+                            <span class="text-4xl block mb-2">🃏</span>
+                            <p class="text-sm">Select a topic and click Generate to create custom study cards.</p>
+                        </div>
+                    </div>
+
+                    <!-- Flashcard Controls -->
+                    <div id="flashcardControls" class="p-3 bg-white border-t border-gray-200 rounded-b-xl flex justify-between items-center hidden">
+                        <button onclick="prevFlashcard()" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors">← Prev</button>
+                        <span id="fcCounter" class="text-sm font-bold text-gray-500">1 / 5</span>
+                        <button onclick="nextFlashcard()" class="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-sm transition-colors">Next →</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <script>
@@ -636,9 +742,15 @@
             document.getElementById(sectionId).classList.remove('hidden');
             
             // Update Sidebar UI
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'bg-gray-50', 'text-blue-600', 'border-right'));
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'bg-gray-50', 'text-blue-600', 'border-right', 'text-indigo-600', 'bg-indigo-50', 'border-indigo-600'));
             const activeNav = document.getElementById('nav-' + sectionId);
-            if(activeNav) activeNav.classList.add('active');
+            if(activeNav) {
+                if (sectionId === 'ai') {
+                    activeNav.classList.add('active', 'text-indigo-600', 'bg-indigo-50', 'border-l-4', 'border-indigo-600');
+                } else {
+                    activeNav.classList.add('active', 'bg-gray-50', 'text-blue-600', 'border-right');
+                }
+            }
 
             // Initialize charts if needed
             if (sectionId === 'arrays' && !window.luckyNumsChart) {
@@ -898,6 +1010,184 @@
             
             valInput.value = '';
             renderDS();
+        }
+
+        // --- SECTION 9: AI LOGIC (Gemini API) ---
+        const apiKey = ""; // API Key provided by environment
+        const geminiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        // Exponential Backoff Fetch
+        async function fetchWithBackoff(url, options, retries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await new Promise(res => setTimeout(res, delays[i]));
+                }
+            }
+        }
+
+        // AI Tutor Chat
+        let chatCounter = 0;
+        async function sendPracticeMessage() {
+            const inputEl = document.getElementById('aiTutorInput');
+            const message = inputEl.value.trim();
+            if (!message) return;
+
+            appendChatMessage('User', message);
+            inputEl.value = '';
+
+            const typingId = `msg-${chatCounter++}`;
+            appendChatMessage('AI', '<span class="animate-pulse">Thinking...</span>', typingId);
+
+            const systemPrompt = "You are an expert, friendly C++ programming tutor helping a beginner/intermediate student. Provide concise explanations, short code examples, or practice questions when asked. Keep responses under 150 words if possible. Format code in plain text or simple markdown.";
+            
+            const payload = {
+                contents: [{ parts: [{ text: message }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+
+            try {
+                const data = await fetchWithBackoff(geminiEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Sorry, I couldn't process that.";
+                // Simple markdown code block replacement for basic HTML view
+                const formattedText = responseText.replace(/```(.*?)```/gs, '<pre class="bg-gray-800 text-green-400 p-2 rounded text-xs overflow-x-auto my-2">$1</pre>').replace(/\n/g, '<br>');
+                
+                updateChatMessage(typingId, formattedText);
+            } catch (err) {
+                updateChatMessage(typingId, `<span class="text-red-500">Connection error. Please try again later.</span>`);
+            }
+        }
+
+        function appendChatMessage(sender, text, id = '') {
+            const history = document.getElementById('aiChatHistory');
+            const isUser = sender === 'User';
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+            if(id) msgDiv.id = id;
+            
+            const avatar = isUser 
+                ? `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold flex-shrink-0">U</div>`
+                : `<div class="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold flex-shrink-0">AI</div>`;
+                
+            const bubbleClasses = isUser
+                ? `bg-indigo-600 text-white p-3 rounded-lg rounded-tr-none shadow-sm text-sm`
+                : `bg-white p-3 rounded-lg rounded-tl-none shadow-sm border border-gray-100 text-sm text-gray-700`;
+
+            msgDiv.innerHTML = `
+                ${avatar}
+                <div class="${bubbleClasses} max-w-[85%]">${text}</div>
+            `;
+            
+            history.appendChild(msgDiv);
+            history.scrollTop = history.scrollHeight;
+            return id;
+        }
+
+        function updateChatMessage(id, newText) {
+            const msgDiv = document.getElementById(id);
+            if (msgDiv) {
+                const bubble = msgDiv.querySelector('.bg-white'); // Target AI bubble
+                if (bubble) bubble.innerHTML = newText;
+            }
+            const history = document.getElementById('aiChatHistory');
+            history.scrollTop = history.scrollHeight;
+        }
+
+        // AI Flashcards
+        let currentFlashcards = [];
+        let currentCardIndex = 0;
+
+        async function generateFlashcards() {
+            const topic = document.getElementById('flashcardTopic').value;
+            const btn = document.getElementById('generateBtn');
+            const emptyState = document.getElementById('flashcardEmpty');
+            const loadingState = document.getElementById('flashcardLoading');
+            const scene = document.getElementById('flashcardScene');
+            const controls = document.getElementById('flashcardControls');
+
+            btn.disabled = true;
+            btn.innerText = 'Generating...';
+            emptyState.classList.add('hidden');
+            scene.classList.add('hidden');
+            controls.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+
+            const prompt = `Generate exactly 5 flashcards for studying the following C++ topic: "${topic}". 
+            Return the output strictly as a valid JSON array of objects. 
+            Each object must have exactly two string properties: "front" (a direct question or concept) and "back" (the concise answer or definition).
+            Do not include any markdown formatting, backticks, or extra conversational text. Just the raw JSON array.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { responseMimeType: "application/json" }
+            };
+
+            try {
+                const data = await fetchWithBackoff(geminiEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                let jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
+                currentFlashcards = JSON.parse(jsonText);
+                
+                if (currentFlashcards.length > 0) {
+                    currentCardIndex = 0;
+                    displayFlashcard();
+                    loadingState.classList.add('hidden');
+                    scene.classList.remove('hidden');
+                    controls.classList.remove('hidden');
+                } else {
+                    throw new Error("Empty array returned");
+                }
+            } catch (err) {
+                loadingState.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.innerHTML = `<span class="text-3xl block mb-2">⚠️</span><p class="text-sm text-red-500">Failed to generate cards. Please try again.</p>`;
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Generate';
+            }
+        }
+
+        function displayFlashcard() {
+            const card = currentFlashcards[currentCardIndex];
+            document.getElementById('fcFrontText').innerText = card.front;
+            document.getElementById('fcBackText').innerText = card.back;
+            document.getElementById('fcCounter').innerText = `${currentCardIndex + 1} / ${currentFlashcards.length}`;
+            
+            // Ensure card is showing front
+            document.getElementById('flashcardInner').parentElement.classList.remove('flashcard-flipped');
+        }
+
+        function toggleFlashcard() {
+            document.getElementById('flashcardScene').classList.toggle('flashcard-flipped');
+        }
+
+        function prevFlashcard() {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                displayFlashcard();
+            }
+        }
+
+        function nextFlashcard() {
+            if (currentCardIndex < currentFlashcards.length - 1) {
+                currentCardIndex++;
+                displayFlashcard();
+            }
         }
 
         // Initial setup
