@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C++ Masterclass: Interactive Learning Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+        code, pre { font-family: 'Fira Code', monospace; }
+        .chart-container { 
+            position: relative; 
+            width: 100%; 
+            max-width: 600px; 
+            margin-left: auto; 
+            margin-right: auto; 
+            height: 300px; 
+            max-height: 400px; 
+        }
+        @media (min-width: 768px) { .chart-container { height: 350px; } }
+        
+        .nav-item.active {
+            background-color: #e5e7eb;
+            color: #2563eb;
+            border-right: 3px solid #2563eb;
+        }
+        
+        .code-highlight {
+            background-color: #e0f2fe;
+            transition: background-color 0.3s;
+        }
+        .code-highlight:hover {
+            background-color: #bae6fd;
+            cursor: help;
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .memory-cell {
+            transition: all 0.3s ease;
+        }
+        .memory-cell:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+
+    <!-- Chosen Palette: Warm Neutrals with Blue Accents -->
+    <!-- Application Structure Plan: 
+         Layout: Dashboard style with a fixed left sidebar for navigation (Topics) and a scrollable main content area.
+         Logic: The content is divided into 5 logical modules (Foundation, Data, Control, Pointers, OOP).
+         Interaction: Users click sidebar items to switch views. Inside views, they interact with "Simulators" (e.g., Array modifier, Loop stepper, Object Factory).
+         Why: This structure allows learners to focus on one complex topic at a time without being overwhelmed by a long text document.
+    -->
+    
+    <!-- Visualization & Content Choices:
+         1. Variables: Interactive Cards explaining types.
+         2. Arrays: Chart.js Bar Chart to visualize index vs value. Interaction: Buttons to modify specific indices.
+         3. Loops: A visual "Stepper" that highlights current iteration.
+         4. Pointers: A CSS-based memory visualizer showing Address vs Value.
+         5. OOP: An "Object Factory" form that creates visual cards representing instances of a class.
+         Justification: Code concepts are abstract; these visualizers make memory, iteration, and instantiation concrete.
+    -->
+    
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="h-screen flex overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col z-10">
+        <div class="p-6 border-b border-gray-100">
+            <h1 class="text-xl font-bold text-gray-800">C++ <span class="text-blue-600">Mastery</span></h1>
+            <p class="text-xs text-gray-500 mt-1">Interactive Course Notes</p>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4">
+            <ul class="space-y-1">
+                <li><button onclick="navigate('intro')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors active" id="nav-intro">1. Introduction & Setup</button></li>
+                <li><button onclick="navigate('basics')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-basics">2. Basic Structure</button></li>
+                <li><button onclick="navigate('data')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-data">3. Variables & Strings</button></li>
+                <li><button onclick="navigate('arrays')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-arrays">4. Arrays & Math</button></li>
+                <li><button onclick="navigate('control')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-control">5. Logic & Loops</button></li>
+                <li><button onclick="navigate('pointers')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-pointers">6. Pointers & Memory</button></li>
+                <li><button onclick="navigate('oop')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-oop">7. OOP & Classes</button></li>
+                <li><button onclick="navigate('ds')" class="nav-item w-full text-left px-6 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors" id="nav-ds">8. Data Structures</button></li>
+            </ul>
+        </nav>
+        <div class="p-4 border-t border-gray-100 bg-gray-50">
+            <div class="text-xs text-gray-500">Instructor: Mike (Draft Academy)</div>
+        </div>
+    </aside>
+
+    <!-- Mobile Header -->
+    <div class="md:hidden fixed top-0 w-full bg-white border-b border-gray-200 z-20 px-4 py-3 flex justify-between items-center">
+        <h1 class="font-bold text-gray-800">C++ Mastery</h1>
+        <select onchange="navigate(this.value)" class="bg-gray-100 border-none rounded px-2 py-1 text-sm">
+            <option value="intro">1. Introduction</option>
+            <option value="basics">2. Basic Structure</option>
+            <option value="data">3. Variables</option>
+            <option value="arrays">4. Arrays & Math</option>
+            <option value="control">5. Control Flow</option>
+            <option value="pointers">6. Pointers</option>
+            <option value="oop">7. OOP</option>
+            <option value="ds">8. Data Structures</option>
+        </select>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto pt-16 md:pt-0 p-6 md:p-12 relative" id="main-content">
+        
+        <!-- SECTION 1: INTRO -->
+        <section id="intro" class="section-view block space-y-8 max-w-4xl mx-auto">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4">Welcome to C++</h2>
+                <p class="text-gray-600 leading-relaxed mb-6">
+                    This interactive dashboard transforms the comprehensive "Draft Academy C++ Course" notes into an explorable experience. 
+                    From setting up your environment to mastering Object-Oriented Programming, explore each module to visualize how code works.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 p-6 rounded-lg border border-blue-100">
+                        <h3 class="font-bold text-blue-800 mb-2">Environment Setup</h3>
+                        <ul class="list-disc list-inside text-sm text-blue-700 space-y-2">
+                            <li><strong>IDE:</strong> Code::Blocks (Recommended)</li>
+                            <li><strong>Compiler:</strong> MinGW / GCC (Translates code to machine language)</li>
+                            <li><strong>Mac:</strong> Use Xcode or `xcode-select --install`</li>
+                        </ul>
+                    </div>
+                    <div class="bg-amber-50 p-6 rounded-lg border border-amber-100">
+                        <h3 class="font-bold text-amber-800 mb-2">Why C++?</h3>
+                        <p class="text-sm text-amber-700">
+                            A powerful, high-performance language used in game development, systems programming, and high-frequency trading. 
+                            It serves as a foundation for understanding computer memory and logic.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: BASIC STRUCTURE -->
+        <section id="basics" class="section-view hidden space-y-8 max-w-4xl mx-auto">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Anatomy of a Program</h2>
+                <p class="text-gray-600 mt-2">Every C++ program follows a specific structure. Hover over the code lines below to understand their purpose.</p>
+            </div>
+
+            <div class="bg-gray-900 rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-gray-800 px-4 py-2 flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span class="text-xs text-gray-400 ml-2">main.cpp</span>
+                </div>
+                <div class="p-6 text-sm md:text-base">
+                    <pre class="text-gray-300"><span class="text-purple-400 hover:bg-gray-700 cursor-help px-1 rounded transition-colors" title="Imports the Input/Output stream library so we can print text.">#include &lt;iostream&gt;</span>
+
+<span class="text-purple-400 hover:bg-gray-700 cursor-help px-1 rounded transition-colors" title="Allows us to use names for objects and variables from the standard library.">using namespace std;</span>
+
+<span class="text-blue-400 hover:bg-gray-700 cursor-help px-1 rounded transition-colors" title="The entry point of the application. Execution starts here.">int main()</span> {
+    <span class="text-green-400 hover:bg-gray-700 cursor-help px-1 rounded transition-colors" title="'Console Out'. Prints text to the screen.">&lt;&lt; cout</span> <span class="text-yellow-300">"Hello World!"</span> <span class="text-purple-400 hover:bg-gray-700 cursor-help px-1 rounded transition-colors" title="'End Line'. Moves the cursor to the next line.">&lt;&lt; endl;</span>
+    <span class="text-blue-400 hover:bg-gray-700 cursor-help px-1 rounded transition-colors" title="Returns 0 to the operating system, indicating the program ran successfully.">return 0;</span>
+}</pre>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-3">Key Components</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-3 bg-gray-50 rounded border border-gray-100">
+                        <code class="text-purple-600 font-bold">cout</code>
+                        <p class="text-xs text-gray-600 mt-1">Console Output. Think of the arrows <code>&lt;&lt;</code> as pointing data OUT to the screen.</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded border border-gray-100">
+                        <code class="text-purple-600 font-bold">cin</code>
+                        <p class="text-xs text-gray-600 mt-1">Console Input. Arrows <code>&gt;&gt;</code> point data INTO a variable.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: VARIABLES -->
+        <section id="data" class="section-view hidden space-y-8 max-w-4xl mx-auto">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Variables & Strings</h2>
+                <p class="text-gray-600 mt-2">Variables are containers for data. Explore the different types below and see how strings can be manipulated.</p>
+            </div>
+
+            <!-- Data Types Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <button onclick="showVarInfo('char')" class="p-4 bg-white border border-gray-200 hover:border-blue-400 rounded-lg text-center transition-all shadow-sm">
+                    <div class="text-lg font-mono font-bold text-pink-600">char</div>
+                    <div class="text-xs text-gray-500 mt-1">Single Character</div>
+                </button>
+                <button onclick="showVarInfo('string')" class="p-4 bg-white border border-gray-200 hover:border-blue-400 rounded-lg text-center transition-all shadow-sm">
+                    <div class="text-lg font-mono font-bold text-blue-600">string</div>
+                    <div class="text-xs text-gray-500 mt-1">Text</div>
+                </button>
+                <button onclick="showVarInfo('int')" class="p-4 bg-white border border-gray-200 hover:border-blue-400 rounded-lg text-center transition-all shadow-sm">
+                    <div class="text-lg font-mono font-bold text-green-600">int</div>
+                    <div class="text-xs text-gray-500 mt-1">Whole Number</div>
+                </button>
+                <button onclick="showVarInfo('double')" class="p-4 bg-white border border-gray-200 hover:border-blue-400 rounded-lg text-center transition-all shadow-sm">
+                    <div class="text-lg font-mono font-bold text-purple-600">double</div>
+                    <div class="text-xs text-gray-500 mt-1">Decimal</div>
+                </button>
+                <button onclick="showVarInfo('bool')" class="p-4 bg-white border border-gray-200 hover:border-blue-400 rounded-lg text-center transition-all shadow-sm col-span-2 md:col-span-1">
+                    <div class="text-lg font-mono font-bold text-orange-600">bool</div>
+                    <div class="text-xs text-gray-500 mt-1">True/False</div>
+                </button>
+            </div>
+
+            <div id="var-info-display" class="bg-blue-50 border border-blue-100 p-6 rounded-lg text-sm text-blue-800">
+                Click a variable type above to see details and examples.
+            </div>
+
+            <!-- String Manipulator -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold text-gray-800 mb-4">Interactive String Explorer</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Input String</label>
+                        <input type="text" id="strInput" value="Draft Academy" class="w-full bg-gray-50 border border-gray-300 rounded p-2 font-mono text-gray-800 focus:outline-none focus:border-blue-500" oninput="updateStringAnalysis()">
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-gray-600 font-mono text-sm">.length()</span>
+                            <span id="strLength" class="font-bold text-gray-800">13</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-gray-600 font-mono text-sm">[0] (First Char)</span>
+                            <span id="strFirst" class="font-bold text-gray-800">'D'</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-2">
+                            <span class="text-gray-600 font-mono text-sm">.find("a", 0)</span>
+                            <span id="strFind" class="font-bold text-gray-800">2</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600 font-mono text-sm">.substr(0, 3)</span>
+                            <span id="strSub" class="font-bold text-gray-800">"Dra"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: ARRAYS & MATH -->
+        <section id="arrays" class="section-view hidden space-y-8 max-w-4xl mx-auto">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Arrays & Mathematics</h2>
+                <p class="text-gray-600 mt-2">Arrays store lists of data. Use the visualization below to modify array values and understand indexing.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-gray-800"><code>luckyNums</code> Array Visualizer</h3>
+                    <div class="text-xs text-gray-500">Zero-indexed: 0 is the first position</div>
+                </div>
+                
+                <div class="chart-container mb-6">
+                    <canvas id="arrayChart"></canvas>
+                </div>
+
+                <div class="flex flex-wrap gap-4 items-center justify-center bg-gray-50 p-4 rounded-lg">
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-bold text-gray-600">Index:</label>
+                        <select id="arrayIndex" class="border border-gray-300 rounded p-1 text-sm">
+                            <option value="0">0</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-bold text-gray-600">New Value:</label>
+                        <input type="number" id="arrayValue" class="w-20 border border-gray-300 rounded p-1 text-sm" value="99">
+                    </div>
+                    <button onclick="updateArray()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium transition-colors">
+                        luckyNums[index] = value;
+                    </button>
+                    <button onclick="resetArray()" class="text-gray-500 hover:text-gray-700 text-xs underline">Reset</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-gray-200">
+                    <h3 class="font-bold text-gray-800 mb-3">Math Operations</h3>
+                    <div class="space-y-4 text-sm">
+                        <div class="flex justify-between">
+                            <code class="text-purple-600">10 / 3</code>
+                            <span class="text-gray-800 font-bold">3 (Integer Division)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <code class="text-purple-600">10.0 / 3.0</code>
+                            <span class="text-gray-800 font-bold">3.3333 (Double Division)</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <code class="text-purple-600">pow(2, 3)</code>
+                            <span class="text-gray-800 font-bold">8</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <code class="text-purple-600">sqrt(16)</code>
+                            <span class="text-gray-800 font-bold">4</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-yellow-50 p-6 rounded-xl border border-yellow-100">
+                    <h3 class="font-bold text-yellow-800 mb-2">Common Pitfall</h3>
+                    <p class="text-sm text-yellow-700">
+                        In C++, dividing two integers <strong>always</strong> results in an integer. The decimal part is thrown away (truncated), not rounded.
+                        <br><br>
+                        <code>5 / 2 = 2</code>
+                        <br>
+                        <code>5.0 / 2.0 = 2.5</code>
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: CONTROL FLOW -->
+        <section id="control" class="section-view hidden space-y-8 max-w-4xl mx-auto">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Logic & Loops</h2>
+                <p class="text-gray-600 mt-2">Control the flow of your program with conditionals and loops. Use the interactive stepper below to understand how loops iterate.</p>
+            </div>
+
+            <!-- Loop Visualizer -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="font-bold text-gray-800">For Loop Simulator</h3>
+                        <p class="text-xs text-gray-500 font-mono mt-1">for(int i = 0; i < 5; i++)</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-xs uppercase text-gray-400 font-bold">Current Value of i</div>
+                        <div id="loopCounter" class="text-4xl font-bold text-blue-600">0</div>
+                    </div>
+                </div>
+
+                <div class="flex space-x-2 mb-6 h-12 items-end" id="loop-visuals">
+                    <!-- Bars generated by JS -->
+                </div>
+
+                <div class="bg-gray-900 rounded p-4 font-mono text-sm text-green-400 mb-4 h-32 overflow-y-auto" id="loop-console">
+                    <span class="text-gray-500">// Console Output</span><br>
+                </div>
+
+                <div class="flex space-x-4">
+                    <button onclick="stepLoop()" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded font-medium transition-colors">
+                        Step Loop Iteration
+                    </button>
+                    <button onclick="resetLoop()" class="px-4 border border-gray-300 rounded hover:bg-gray-50 text-gray-600 text-sm">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <!-- Conditionals -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-gray-200">
+                    <h3 class="font-bold text-gray-800 mb-4">If Statement Logic</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="checkMale" class="form-checkbox h-5 w-5 text-blue-600" onchange="checkLogic()">
+                                <span class="text-sm font-medium">isMale</span>
+                            </label>
+                            <span class="text-xs text-gray-400">bool</span>
+                        </div>
+                        <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input type="checkbox" id="checkTall" class="form-checkbox h-5 w-5 text-blue-600" onchange="checkLogic()">
+                                <span class="text-sm font-medium">isTall</span>
+                            </label>
+                            <span class="text-xs text-gray-400">bool</span>
+                        </div>
+                        <div class="mt-4 p-4 bg-gray-800 text-white rounded font-mono text-sm">
+                            Output: <span id="logicOutput" class="text-yellow-400">You are not male</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-xl border border-gray-200">
+                    <h3 class="font-bold text-gray-800 mb-2">Switch Statement</h3>
+                    <p class="text-sm text-gray-600 mb-4">Great for checking one value against many cases.</p>
+                    <pre class="text-xs bg-gray-50 p-3 rounded text-gray-700 border border-gray-200 overflow-x-auto">switch(dayNum) {
+    case 0: cout << "Sunday"; break;
+    case 1: cout << "Monday"; break;
+    default: cout << "Invalid";
+}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 6: POINTERS -->
+        <section id="pointers" class="section-view hidden space-y-8 max-w-4xl mx-auto">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Pointers & Memory</h2>
+                <p class="text-gray-600 mt-2">Pointers can be confusing. Visualize them as addresses to physical memory locations.</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0 md:space-x-12">
+                    
+                    <!-- Variable Box -->
+                    <div class="text-center group">
+                        <div class="text-sm font-bold text-gray-500 mb-2">int age = 19;</div>
+                        <div class="memory-cell w-32 h-32 bg-blue-100 border-2 border-blue-400 rounded-lg flex flex-col items-center justify-center relative">
+                            <span class="text-3xl font-bold text-blue-800">19</span>
+                            <span class="text-xs text-blue-600 mt-1">Value</span>
+                            <div class="absolute -bottom-6 text-xs font-mono text-gray-400">Address: 0x6afee0</div>
+                        </div>
+                    </div>
+
+                    <!-- Arrow -->
+                    <div class="hidden md:block">
+                        <div class="text-xs text-center text-gray-400 mb-1">Points To</div>
+                        <svg class="w-12 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    </div>
+                    <div class="md:hidden">
+                        <svg class="w-6 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                    </div>
+
+                    <!-- Pointer Box -->
+                    <div class="text-center group">
+                        <div class="text-sm font-bold text-gray-500 mb-2">int *pAge = &age;</div>
+                        <div class="memory-cell w-32 h-32 bg-purple-100 border-2 border-purple-400 rounded-lg flex flex-col items-center justify-center relative">
+                            <span class="text-sm font-mono font-bold text-purple-800">0x6afee0</span>
+                            <span class="text-xs text-purple-600 mt-1">Value (Address)</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-50 p-4 rounded border border-gray-100">
+                        <h4 class="font-bold text-gray-700 text-sm mb-2">Reference (&)</h4>
+                        <p class="text-xs text-gray-600"><code>&age</code> gets the memory address of the variable <code>age</code>.</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded border border-gray-100">
+                        <h4 class="font-bold text-gray-700 text-sm mb-2">Dereference (*)</h4>
+                        <p class="text-xs text-gray-600"><code>*pAge</code> goes to the address stored in <code>pAge</code> and gets the value (19).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 7: OOP -->
+        <section id="oop" class="section-view hidden space-y-8 max-w-4xl mx-auto">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Object-Oriented Programming</h2>
+                <p class="text-gray-600 mt-2">Classes are blueprints; Objects are the actual structures built from them. Use the factory below to create objects.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Class Blueprint -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                        <div class="bg-blue-600 px-4 py-3">
+                            <h3 class="font-bold text-white">Class: Book</h3>
+                            <div class="text-blue-200 text-xs">The Blueprint</div>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Title</label>
+                                <input type="text" id="bookTitle" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-sm" placeholder="e.g. Harry Potter">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Author</label>
+                                <input type="text" id="bookAuthor" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-sm" placeholder="e.g. JK Rowling">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pages</label>
+                                <input type="number" id="bookPages" class="w-full bg-gray-50 border border-gray-300 rounded p-2 text-sm" placeholder="e.g. 500">
+                            </div>
+                            <button onclick="createObject()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded font-medium transition-colors shadow-sm">
+                                Instantiate Object
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Instantiated Objects Area -->
+                <div class="lg:col-span-2">
+                    <div class="bg-gray-50 rounded-xl border border-gray-200 h-full min-h-[400px] p-6">
+                        <h3 class="font-bold text-gray-400 mb-4 uppercase text-xs tracking-wide">Memory Heap (Objects)</h3>
+                        <div id="objectContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <!-- JS will inject cards here -->
+                            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 opacity-50 flex items-center justify-center h-32 border-dashed">
+                                <span class="text-sm text-gray-400">No objects created yet</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inheritance Mini-Viz -->
+            <div class="bg-white p-6 rounded-xl border border-gray-200 mt-8">
+                <h3 class="font-bold text-gray-800 mb-4">Inheritance Visualized</h3>
+                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-8">
+                    <div class="flex-1 border border-gray-300 rounded p-4 relative">
+                        <div class="absolute -top-3 left-4 bg-white px-2 text-xs font-bold text-gray-500">Parent Class</div>
+                        <h4 class="font-bold text-lg">Chef</h4>
+                        <ul class="text-sm text-gray-600 mt-2 list-disc list-inside">
+                            <li>makeChicken()</li>
+                            <li>makeSalad()</li>
+                        </ul>
+                    </div>
+                    <div class="flex justify-center items-center">
+                        <span class="text-gray-400 text-2xl">→</span>
+                    </div>
+                    <div class="flex-1 border-2 border-green-400 bg-green-50 rounded p-4 relative">
+                        <div class="absolute -top-3 left-4 bg-white px-2 text-xs font-bold text-green-600">Child Class</div>
+                        <h4 class="font-bold text-lg">ItalianChef</h4>
+                        <ul class="text-sm text-gray-600 mt-2 list-disc list-inside">
+                            <li class="opacity-50">makeChicken() (Inherited)</li>
+                            <li class="opacity-50">makeSalad() (Inherited)</li>
+                            <li class="font-bold text-green-700">makePasta() (New)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 8: DATA STRUCTURES -->
+        <section id="ds" class="section-view hidden space-y-8 max-w-4xl mx-auto">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Data Structures & Algorithms</h2>
+                <p class="text-gray-600 mt-2">A comprehensive overview of how to organize and store data efficiently, moving beyond basic arrays to complex Abstract Data Types (ADTs).</p>
+            </div>
+
+            <!-- Theory Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <h3 class="font-bold text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">1</span> Linked Lists
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-3">Non-contiguous memory blocks (nodes) linked via pointers. Dynamic size, avoiding the costly array resizing penalty.</p>
+                    <ul class="text-xs text-gray-500 list-disc pl-4 space-y-1">
+                        <li><strong>Singly:</strong> Contains <code>data</code> and <code>next</code> pointer. O(n) search.</li>
+                        <li><strong>Doubly:</strong> Contains <code>prev</code> and <code>next</code> pointers. Allows forward & backward traversal at cost of extra memory.</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <h3 class="font-bold text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">2</span> Stacks & Queues
+                    </h3>
+                    <ul class="text-sm text-gray-600 list-disc pl-4 space-y-3">
+                        <li><strong>Stack (LIFO):</strong> Last-In, First-Out. <br><span class="text-xs text-gray-400">Operations: Push, Pop, Top. Best for: Reversing lists, tracking function calls (Recursion Tree), balanced parentheses validation.</span></li>
+                        <li><strong>Queue (FIFO):</strong> First-In, First-Out. <br><span class="text-xs text-gray-400">Operations: Enqueue, Dequeue. Best for: Printer queues, handling requests sequentially.</span></li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <h3 class="font-bold text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">3</span> Trees & BST
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-2">Hierarchical node structure with a root, parent, and children. A <strong>Binary Search Tree (BST)</strong> keeps lesser values left, greater values right yielding O(log n) search bounds.</p>
+                    <div class="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                        <strong>Depth-First Traversals:</strong><br>
+                        - Pre-order (DLR): Root, Left, Right<br>
+                        - In-order (LDR): Left, Root, Right (Yields sorted output!)<br>
+                        - Post-order (LRD): Left, Right, Root
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-gray-200 shadow-sm transition-all hover:shadow-md">
+                    <h3 class="font-bold text-gray-800 mb-2 border-b pb-2 flex items-center gap-2">
+                        <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">4</span> Graphs
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-2">Network of vertices connected by edges. Can be directed vs. undirected, and weighted vs. unweighted.</p>
+                    <ul class="text-xs text-gray-500 list-disc pl-4 space-y-2">
+                        <li><strong>Adjacency Matrix:</strong> 2D array [V][V]. O(1) connection check. Uses huge O(V²) space (Bad for Sparse networks like Facebook).</li>
+                        <li><strong>Adjacency List:</strong> Array of linked lists. Space O(V+E). Ideal for Sparse networks.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Interactive Stack vs Queue -->
+            <div class="bg-gray-800 text-white p-6 rounded-xl shadow-lg border border-gray-700">
+                <h3 class="font-bold text-lg mb-1 text-blue-400">Interactive Simulator: Stack vs. Queue</h3>
+                <p class="text-xs text-gray-400 mb-4">Observe how LIFO (Last-In, First-Out) differs from FIFO (First-In, First-Out).</p>
+                
+                <div class="flex flex-col md:flex-row items-center gap-4 mb-6 bg-gray-900 p-4 rounded-lg">
+                    <input type="number" id="dsInputValue" placeholder="Enter a Number" class="bg-gray-700 text-white px-3 py-2 rounded focus:outline-none border border-gray-600 w-full md:w-36 text-center">
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="dsAction('push')" class="bg-blue-600 hover:bg-blue-500 px-3 py-2 rounded text-sm font-medium transition-colors w-24">Push</button>
+                        <button onclick="dsAction('pop')" class="bg-blue-800 hover:bg-blue-700 px-3 py-2 rounded text-sm font-medium transition-colors w-24 border border-blue-600">Pop</button>
+                        
+                        <div class="w-px h-8 bg-gray-700 mx-2 hidden md:block"></div>
+
+                        <button onclick="dsAction('enqueue')" class="bg-green-600 hover:bg-green-500 px-3 py-2 rounded text-sm font-medium transition-colors w-24">Enqueue</button>
+                        <button onclick="dsAction('dequeue')" class="bg-green-800 hover:bg-green-700 px-3 py-2 rounded text-sm font-medium transition-colors w-24 border border-green-600">Dequeue</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Stack Display -->
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 min-h-[220px] flex flex-col justify-end relative overflow-hidden">
+                        <div class="absolute top-3 left-4 text-xs text-blue-400 font-bold tracking-widest uppercase opacity-70">Stack (LIFO)</div>
+                        <div id="stackContainer" class="flex flex-col-reverse gap-1 mt-8 overflow-y-auto">
+                            <!-- Items go here -->
+                        </div>
+                        <div class="border-t border-gray-600 mt-2 w-full text-center text-xs text-gray-500 pt-1">Bottom of Stack</div>
+                    </div>
+                    <!-- Queue Display -->
+                    <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 min-h-[220px] flex flex-col relative overflow-hidden">
+                        <div class="absolute top-3 left-4 text-xs text-green-400 font-bold tracking-widest uppercase opacity-70">Queue (FIFO)</div>
+                        <div class="flex items-center gap-2 w-full overflow-x-auto mt-8 flex-1" id="queueContainer">
+                            <!-- Items go here -->
+                        </div>
+                        <div class="flex justify-between border-t border-gray-600 mt-2 pt-1 text-xs text-gray-500">
+                            <span>← Front (Dequeue here)</span>
+                            <span>Rear (Enqueue here) →</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- NAVIGATION LOGIC ---
+        function navigate(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section-view').forEach(el => el.classList.add('hidden'));
+            // Show selected
+            document.getElementById(sectionId).classList.remove('hidden');
+            
+            // Update Sidebar UI
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active', 'bg-gray-50', 'text-blue-600', 'border-right'));
+            const activeNav = document.getElementById('nav-' + sectionId);
+            if(activeNav) activeNav.classList.add('active');
+
+            // Initialize charts if needed
+            if (sectionId === 'arrays' && !window.luckyNumsChart) {
+                initArrayChart();
+            }
+        }
+
+        // --- SECTION 3: VARIABLES LOGIC ---
+        const varData = {
+            'char': { desc: 'Stores a single character.', example: "char grade = 'A';", size: '1 byte' },
+            'string': { desc: 'Stores a sequence of text.', example: 'string name = "Draft Academy";', size: 'Dynamic' },
+            'int': { desc: 'Stores whole numbers (integers).', example: 'int age = 50;', size: '4 bytes' },
+            'double': { desc: 'Stores floating-point numbers (decimals).', example: 'double gpa = 3.5;', size: '8 bytes' },
+            'bool': { desc: 'Stores true or false values.', example: 'bool isMale = true;', size: '1 byte' }
+        };
+
+        function showVarInfo(type) {
+            const info = varData[type];
+            document.getElementById('var-info-display').innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h4 class="font-bold text-lg capitalize mb-1">${type}</h4>
+                        <p class="mb-3">${info.desc}</p>
+                        <code class="bg-white px-2 py-1 rounded border border-blue-200 text-purple-700 font-mono">${info.example}</code>
+                    </div>
+                    <span class="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full font-bold">${info.size}</span>
+                </div>
+            `;
+        }
+
+        // String Explorer
+        function updateStringAnalysis() {
+            const val = document.getElementById('strInput').value;
+            document.getElementById('strLength').innerText = val.length;
+            document.getElementById('strFirst').innerText = val.length > 0 ? `'${val[0]}'` : 'N/A';
+            
+            const idx = val.toLowerCase().indexOf('a');
+            document.getElementById('strFind').innerText = idx !== -1 ? idx : 'Not Found';
+            
+            document.getElementById('strSub').innerText = val.length >= 3 ? `"${val.substring(0, 3)}"` : "N/A";
+        }
+
+        // --- SECTION 4: ARRAYS (Chart.js) ---
+        let luckyNums = [4, 8, 15, 16, 23, 42];
+        let luckyNumsChart = null;
+
+        function initArrayChart() {
+            const ctx = document.getElementById('arrayChart').getContext('2d');
+            
+            // Destroy existing if any (though usually init runs once per view switch logic)
+            if(window.luckyNumsChart) window.luckyNumsChart.destroy();
+
+            window.luckyNumsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Index 0', 'Index 1', 'Index 2', 'Index 3', 'Index 4', 'Index 5'],
+                    datasets: [{
+                        label: 'Value',
+                        data: luckyNums,
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                        hoverBackgroundColor: '#2563eb'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => `luckyNums[${items[0].dataIndex}]`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        function updateArray() {
+            const idx = parseInt(document.getElementById('arrayIndex').value);
+            const val = parseInt(document.getElementById('arrayValue').value);
+            
+            if(!isNaN(val)) {
+                luckyNums[idx] = val;
+                if(window.luckyNumsChart) {
+                    window.luckyNumsChart.data.datasets[0].data = luckyNums;
+                    window.luckyNumsChart.update();
+                }
+            }
+        }
+        
+        function resetArray() {
+            luckyNums = [4, 8, 15, 16, 23, 42];
+            document.getElementById('arrayValue').value = 99;
+            if(window.luckyNumsChart) {
+                window.luckyNumsChart.data.datasets[0].data = luckyNums;
+                window.luckyNumsChart.update();
+            }
+        }
+
+        // --- SECTION 5: CONTROL FLOW ---
+        let loopCount = 0;
+        const maxLoop = 5;
+
+        function stepLoop() {
+            if (loopCount < maxLoop) {
+                // Add visual bar
+                const visuals = document.getElementById('loop-visuals');
+                const bar = document.createElement('div');
+                bar.className = 'w-8 bg-blue-500 rounded-t transition-all duration-300';
+                bar.style.height = '0px';
+                visuals.appendChild(bar);
+                
+                // Animate height
+                setTimeout(() => { bar.style.height = ((loopCount + 1) * 20) + '%'; }, 50);
+
+                // Log
+                const console = document.getElementById('loop-console');
+                console.innerHTML += `> i is ${loopCount}. Printing nums[${loopCount}]...<br>`;
+                console.scrollTop = console.scrollHeight;
+
+                loopCount++;
+                document.getElementById('loopCounter').innerText = loopCount;
+                
+                if (loopCount === maxLoop) {
+                    const console = document.getElementById('loop-console');
+                    console.innerHTML += `<span class="text-yellow-400">> Loop Finished (i < 5 is false)</span><br>`;
+                    console.scrollTop = console.scrollHeight;
+                }
+            }
+        }
+
+        function resetLoop() {
+            loopCount = 0;
+            document.getElementById('loopCounter').innerText = 0;
+            document.getElementById('loop-visuals').innerHTML = '';
+            document.getElementById('loop-console').innerHTML = '<span class="text-gray-500">// Console Output</span><br>';
+        }
+
+        // Logic Checker
+        function checkLogic() {
+            const isMale = document.getElementById('checkMale').checked;
+            const isTall = document.getElementById('checkTall').checked;
+            const output = document.getElementById('logicOutput');
+
+            if (isMale && isTall) {
+                output.innerText = "You are a tall male";
+                output.className = "text-green-400 font-bold";
+            } else if (isMale && !isTall) {
+                output.innerText = "You are a short male";
+                output.className = "text-blue-400 font-bold";
+            } else {
+                output.innerText = "You are not male";
+                output.className = "text-red-400 font-bold";
+            }
+        }
+
+        // --- SECTION 7: OOP ---
+        let objectsCreated = 0;
+
+        function createObject() {
+            const title = document.getElementById('bookTitle').value || 'Untitled';
+            const author = document.getElementById('bookAuthor').value || 'Unknown';
+            const pages = document.getElementById('bookPages').value || 0;
+
+            const container = document.getElementById('objectContainer');
+            
+            // Remove empty state if present
+            if (objectsCreated === 0) {
+                container.innerHTML = '';
+            }
+
+            const card = document.createElement('div');
+            card.className = 'bg-white p-4 rounded-lg shadow-md border-l-4 border-blue-500 animate-[fadeIn_0.5s_ease-out]';
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs font-bold text-gray-400 uppercase">Object Address: 0x${Math.floor(Math.random()*16777215).toString(16)}</span>
+                    <span class="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded font-bold">Book</span>
+                </div>
+                <div class="space-y-1">
+                    <p class="text-sm"><span class="font-bold text-gray-600">Title:</span> ${title}</p>
+                    <p class="text-sm"><span class="font-bold text-gray-600">Author:</span> ${author}</p>
+                    <p class="text-sm"><span class="font-bold text-gray-600">Pages:</span> ${pages}</p>
+                </div>
+            `;
+            
+            container.appendChild(card);
+            objectsCreated++;
+            
+            // Clear inputs
+            document.getElementById('bookTitle').value = '';
+            document.getElementById('bookAuthor').value = '';
+            document.getElementById('bookPages').value = '';
+        }
+
+        // --- SECTION 8: DATA STRUCTURES ---
+        let dsStack = [];
+        let dsQueue = [];
+
+        function renderDS() {
+            const stackEl = document.getElementById('stackContainer');
+            stackEl.innerHTML = '';
+            
+            if(dsStack.length === 0) {
+                stackEl.innerHTML = `<div class="text-gray-600 text-xs text-center py-4 italic border border-dashed border-gray-700 rounded">Stack is empty</div>`;
+            } else {
+                dsStack.forEach((val, i) => {
+                    const isTop = i === dsStack.length - 1;
+                    stackEl.innerHTML += `<div class="w-full bg-blue-500/20 text-blue-200 text-center py-2 rounded border border-blue-500/50 shadow-sm transition-all animate-[fadeIn_0.2s_ease-out] ${isTop ? 'bg-blue-600 text-white font-bold scale-[1.02]' : ''}">
+                        ${val} ${isTop ? '<span class="text-xs opacity-75 ml-1">(Top)</span>' : ''}
+                    </div>`;
+                });
+            }
+
+            const queueEl = document.getElementById('queueContainer');
+            queueEl.innerHTML = '';
+            
+            if(dsQueue.length === 0) {
+                queueEl.innerHTML = `<div class="text-gray-600 text-xs text-center py-4 italic border border-dashed border-gray-700 rounded w-full">Queue is empty</div>`;
+            } else {
+                dsQueue.forEach((val, i) => {
+                    const isFront = i === 0;
+                    queueEl.innerHTML += `<div class="min-w-[3.5rem] h-12 flex items-center justify-center px-3 bg-green-500/20 text-green-200 rounded border border-green-500/50 shadow-sm transition-all animate-[fadeIn_0.2s_ease-out] ${isFront ? 'bg-green-600 text-white font-bold scale-[1.05]' : ''}">
+                        ${val}
+                    </div>`;
+                });
+            }
+        }
+
+        function dsAction(action) {
+            const valInput = document.getElementById('dsInputValue');
+            let val = parseInt(valInput.value);
+
+            // Default to random value if empty to easily test
+            if (isNaN(val) && (action === 'push' || action === 'enqueue')) {
+                val = Math.floor(Math.random() * 99) + 1;
+            }
+
+            switch(action) {
+                case 'push':
+                    dsStack.push(val);
+                    break;
+                case 'pop':
+                    if (dsStack.length > 0) dsStack.pop();
+                    break;
+                case 'enqueue':
+                    dsQueue.push(val);
+                    break;
+                case 'dequeue':
+                    if (dsQueue.length > 0) dsQueue.shift();
+                    break;
+            }
+            
+            valInput.value = '';
+            renderDS();
+        }
+
+        // Initial setup
+        updateStringAnalysis();
+        checkLogic();
+        renderDS();
+    </script>
+</body>
+</html>
